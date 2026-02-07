@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Ad Demo Project - Glue, Redshift, S3, IAM
+
+Parameters:
+  RedshiftMasterPassword:
+    Type: String
+    NoEcho: true
+    Default: GlueRedshift#2026!
+
+Resources:
+
+# -------------------------------------------------
+# S3 BUCKET
+# -------------------------------------------------
+  AdDemoBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ad-demo-bucket
+
+# -------------------------------------------------
+# IAM ROLE FOR GLUE
+# -------------------------------------------------
+  AdGlueRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: AdGlueRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: glue.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/SecretsManagerReadWrite
+
+# -------------------------------------------------
+# IAM ROLE FOR REDSHIFT
+# -------------------------------------------------
+  AdRedshiftRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: AdRedshiftRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: redshift.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess
+
+# -------------------------------------------------
+# GLUE DATABASE
+# -------------------------------------------------
+  AdGlueDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: ad-glue-db
+
+# -------------------------------------------------
+# GLUE CRAWLER
+# -------------------------------------------------
+  AdGlueCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: ad-customer-crawler
+      Role: !GetAtt AdGlueRole.Arn
+      DatabaseName: ad-glue-db
+      Targets:
+        S3Targets:
+          - Path: s3://ad-demo-bucket/customer_data/
+      SchemaChangePolicy:
+        UpdateBehavior: UPDATE_IN_DATABASE
+        DeleteBehavior: LOG
+      TablePrefix: customer_transactions_
+
+# -------------------------------------------------
+# REDSHIFT CLUSTER (CHEAP RA NODE)
+# -------------------------------------------------
+  AdRedshiftCluster:
+    Type: AWS::Redshift::Cluster
+    Properties:
+      ClusterIdentifier: ad-redshift-cluster
+      ClusterType: single-node
+      NodeType: ra3.xlplus
+      DBName: customer_analytics
+      MasterUsername: admin
+      MasterUserPassword: !Ref RedshiftMasterPassword
+      IamRoles:
+        - !GetAtt AdRedshiftRole.Arn
+      PubliclyAccessible: true
+      Encrypted: true
+
+# -------------------------------------------------
+# SECRETS MANAGER (FOR GLUE CONNECTION)
+# -------------------------------------------------
+  RedshiftSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: ad-redshift-secret
+      SecretString: !Sub |
+        {
+          "username": "admin",
+          "password": "${RedshiftMasterPassword}"
+        }
+
+# -------------------------------------------------
+# GLUE CONNECTION TO REDSHIFT
+# -------------------------------------------------
+  GlueRedshiftConnection:
+    Type: AWS::Glue::Connection
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      ConnectionInput:
+        Name: ad-redshift-connection
+        ConnectionType: JDBC
+        ConnectionProperties:
+          JDBC_CONNECTION_URL: !Sub |
+            jdbc:redshift://${AdRedshiftCluster.Endpoint.Address}:${AdRedshiftCluster.Endpoint.Port}/customer_analytics
+          SECRET_ID: !Ref RedshiftSecret
+        PhysicalConnectionRequirements:
+          AvailabilityZone: !Select [0, !GetAZs '']

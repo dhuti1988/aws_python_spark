@@ -1,0 +1,11 @@
+channel_id,customer_id,transaction_id,transaction_date,amount,merchant_name
+phone,54449,ccaba7c4-fb05-4bb4-a817-8da58a28852f,2026-04-23,524,target
+web,58849,393b7ae1-0dcb-46d1-a9e0-afa385b93fb5,2025-06-08,829,aldi
+phone,34051,9b5fb536-9aac-4943-95eb-5c63de3eb166,2026-05-10,300,best buy
+app,59086,73b0e7f9-a4be-4b20-b062-4c272458eac3,2025-05-27,454,aldi
+app,88225,a808c3ed-7439-416a-a386-04e8d9ada3db,2026-10-14,314,best buy
+phone,33413,ba353519-8155-4b9b-874c-0fa5b2ead415,2026-09-20,995,best buy
+app,43604,143cee83-894c-474d-bfc4-998c307f3c7a,2026-10-03,507,aldi
+app,77783,87d176ec-b44f-4baf-8f8f-ebe147eb2080,2025-09-08,835,amazon
+web,19773,1decf50e-5471-4498-b79a-ce2fec07993e,2025-01-05,217,ebay
+phone,79547,01d994a6-c3bd-4e5a-a7e7-59c6892d5123,2026-03-22,449,best buy
