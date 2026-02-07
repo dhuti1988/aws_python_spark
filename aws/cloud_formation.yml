@@ -15,7 +15,7 @@ Resources:
   AdDemoBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: ad-demo-bucket
+      BucketName: !Sub 'ad-demo-bucket-${AWS::AccountId}'
 
 # -------------------------------------------------
 # IAM ROLE FOR GLUE
@@ -75,7 +75,7 @@ Resources:
       DatabaseName: ad-glue-db
       Targets:
         S3Targets:
-          - Path: s3://ad-demo-bucket/customer_data/
+          - Path: !Sub 's3://${AdDemoBucket}/customer_data/'
       SchemaChangePolicy:
         UpdateBehavior: UPDATE_IN_DATABASE
         DeleteBehavior: LOG

@@ -32,6 +32,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy CloudFormation stack
+        id: deploy
         env:
           REDSHIFT_PASSWORD: ${{ secrets.REDSHIFT_MASTER_PASSWORD }}
         run: |
@@ -40,3 +41,16 @@ jobs:
             PARAMS="$PARAMS --parameter-overrides RedshiftMasterPassword=$REDSHIFT_PASSWORD"
           fi
           aws cloudformation deploy $PARAMS
+
+      - name: CloudFormation failure details
+        if: failure()
+        run: |
+          echo "## CloudFormation Deployment Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Failed Resources" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          aws cloudformation describe-stack-events \
+            --stack-name customer-analytics-stack \
+            --query "StackEvents[?ResourceStatus=='CREATE_FAILED' || ResourceStatus=='UPDATE_FAILED'].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}" \
+            --output table >> $GITHUB_STEP_SUMMARY 2>&1 || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
