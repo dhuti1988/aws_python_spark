@@ -7,9 +7,7 @@
 name: Deploy CloudFormation
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:  # Run manually from Actions tab
 
 jobs:
   deploy:

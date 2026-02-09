@@ -38,7 +38,7 @@ def generate_dataframe():
 
 
 def main():
-    s3_bucket = "demo-bucket-dhuti"
+    s3_bucket = "ad-demo-bucket-205930608840"
     s3_prefix = "customer_data"
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     part_key = timestamp[:8]
